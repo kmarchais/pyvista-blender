@@ -1,0 +1,93 @@
+# Zensical configuration for the pyvista-blender documentation site.
+# Build:  uv run zensical build
+# Serve:  uv run zensical serve
+# Docs:   https://zensical.org/docs/
+
+[project]
+site_name = "pyvista-blender"
+site_description = "Render PyVista plotter scenes through Blender (bpy) for photoreal output."
+site_author = "Kevin Marchais"
+site_url = "https://kmarchais.github.io/pyvista-blender"
+copyright = "Copyright &copy; 2026 Kevin Marchais"
+
+nav = [
+    { "Home" = "index.md" },
+    { "Getting started" = [
+        { "Installation" = "getting-started/installation.md" },
+        { "Quick start" = "getting-started/quickstart.md" },
+        { "Configuration" = "getting-started/configuration.md" },
+    ] },
+    { "Cookbook" = [
+        { "PBR materials" = "cookbook/pbr.md" },
+        { "Rendering styles" = "cookbook/styles.md" },
+        { "Lights" = "cookbook/lights.md" },
+        { "Backgrounds" = "cookbook/backgrounds.md" },
+        { "Animation" = "cookbook/animation.md" },
+        { "HUD overlays" = "cookbook/hud.md" },
+        { "Glyph instancing" = "cookbook/glyphs.md" },
+        { "Animated glyphs" = "cookbook/animated_glyphs.md" },
+        { "Subplots" = "cookbook/subplots.md" },
+        { "Export to .blend" = "cookbook/export_blend.md" },
+        { "Volume rendering" = "cookbook/volume.md" },
+        { "Point clouds" = "cookbook/point_clouds.md" },
+        { "Jupyter notebooks" = "cookbook/jupyter.md" },
+        { "Browser viewport (Trame)" = "cookbook/web.md" },
+    ] },
+    { "Gallery" = [
+        { "Overview" = "gallery/index.md" },
+        { "PBR materials" = "gallery/pbr.md" },
+        { "Rendering styles" = "gallery/styles.md" },
+        { "Lights" = "gallery/lights.md" },
+        { "Backgrounds" = "gallery/backgrounds.md" },
+        { "Scalars & datasets" = "gallery/scalars.md" },
+        { "Glyph instancing" = "gallery/glyphs.md" },
+        { "Point clouds" = "gallery/point_clouds.md" },
+        { "Cameras & layout" = "gallery/cameras.md" },
+        { "HUD overlays" = "gallery/hud.md" },
+        { "Animation" = "gallery/animation.md" },
+    ] },
+    { "Architecture" = "architecture.md" },
+]
+
+[project.theme]
+language = "en"
+features = [
+    "announce.dismiss",
+    "content.code.annotate",
+    "content.code.copy",
+    "content.code.select",
+    "content.footnote.tooltips",
+    "content.tabs.link",
+    "content.tooltips",
+    "navigation.footer",
+    "navigation.indexes",
+    "navigation.instant",
+    "navigation.instant.prefetch",
+    "navigation.path",
+    "navigation.sections",
+    "navigation.top",
+    "navigation.tracking",
+    "search.highlight",
+]
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "deep-orange"  # Blender orange
+accent = "teal"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "deep-orange"
+accent = "teal"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/kmarchais/pyvista-blender"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/python"
+link = "https://pypi.org/project/pyvista-blender/"

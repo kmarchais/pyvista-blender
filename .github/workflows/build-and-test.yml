@@ -1,0 +1,87 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Windows-only lane that exercises the bpy-free subset on the matrix
+  # we actually need cross-platform coverage for.
+  #
+  # Why not Linux: the `bpy` job below runs on Linux with the full suite
+  # (no `-m "not bpy"` filter), so it already covers the bpy-free tests
+  # as a subset.
+  #
+  # Why not macOS: GitHub-hosted macOS runners can't run pyvista's
+  # off-screen path. `pv.Plotter(off_screen=True)` hangs forever on
+  # macos-latest because no OSMesa is available and VTK falls through to
+  # native windowing on Cocoa. Even pyvista upstream uses a self-hosted
+  # Mac runner for this reason.
+  bpy-free:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Sync deps (dev group, no bpy)
+        run: uv sync --group dev --no-install-package bpy
+
+      - name: Run bpy-free tests
+        env:
+          PYVISTA_OFF_SCREEN: "true"
+        run: uv run pytest -ra -m "not bpy"
+
+  # Dedicated lane that installs the real bpy wheel and runs the full
+  # suite, including @pytest.mark.bpy tests that exercise translators,
+  # render dispatch, and the HUD post-pass. Linux + Python 3.13 only
+  # (bpy 5.x wheels on Windows/macOS GitHub runners are unreliable; the
+  # Linux + 3.13 combo is the one the project actually ships against).
+  bpy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          python-version: "3.13"
+          enable-cache: true
+
+      - name: Install GL + X + TBB libraries for headless bpy
+        # bpy 5.x links against X11 / OpenGL / TBB even when imported
+        # headless. The default GitHub Linux runner is missing the X11
+        # and TBB runtimes; PyVista's off-screen path additionally
+        # needs OSMesa.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libosmesa6-dev libgl1-mesa-dev libegl1 libegl-mesa0 \
+            libxxf86vm1 libxfixes3 libxi6 libxrandr2 libxinerama1 \
+            libxkbcommon0 libsm6 libtbb12 libsndfile1
+
+      - name: Sync deps (dev group + bpy)
+        run: uv sync --group dev
+
+      - name: Run full test suite with coverage
+        env:
+          PYVISTA_OFF_SCREEN: "true"
+        run: uv run pytest -ra --cov=src/pyvista_blender --cov-report=xml --cov-report=term
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

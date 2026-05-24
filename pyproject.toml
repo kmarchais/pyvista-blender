@@ -1,0 +1,187 @@
+[build-system]
+requires = ["uv_build>=0.11.4,<0.12.0"]
+build-backend = "uv_build"
+
+[project]
+name = "pyvista-blender"
+version = "0.1.0.dev0"
+description = "Render PyVista plotter scenes through Blender (bpy) for photoreal output."
+readme = "README.md"
+# Dual Blender support: bpy 4.5 LTS pins Python 3.11; bpy 5.x pins Python 3.13.
+# Python 3.12 has no matching bpy wheel.
+requires-python = ">=3.11,!=3.12.*,<3.14"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "Kevin Marchais", email = "kevinmarchais@gmail.com" }]
+keywords = ["pyvista", "blender", "bpy", "rendering", "scientific-visualization", "cycles", "eevee"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics :: 3D Rendering",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+    "pyvista>=0.48",
+    "numpy>=1.26",
+    'bpy>=4.5,<5 ; python_version == "3.11"',
+    'bpy>=5.0,<6 ; python_version == "3.13"',
+]
+
+[project.urls]
+Homepage = "https://github.com/kmarchais/pyvista-blender"
+Repository = "https://github.com/kmarchais/pyvista-blender"
+Issues = "https://github.com/kmarchais/pyvista-blender/issues"
+Documentation = "https://kmarchais.github.io/pyvista-blender"
+Changelog = "https://github.com/kmarchais/pyvista-blender/blob/main/CHANGELOG.md"
+
+# PyVista 0.48 plotter component registry. Registers `pl.blender` on every
+# pv.BasePlotter instance via entry-point auto-discovery — no explicit
+# `import pyvista_blender` required in user code.
+[project.entry-points."pyvista.plotter_components"]
+blender = "pyvista_blender._component"
+
+# Jupyter inline backend, loaded by pyvista's `_ensure_entry_points()` on
+# first `pv.set_jupyter_backend("blender")` (or auto-detect call). The
+# entry-point value points at the handler callable, not the module — see
+# `_ensure_entry_points` in pyvista/jupyter/__init__.py.
+[project.entry-points."pyvista.jupyter_backends"]
+blender = "pyvista_blender.jupyter:handler"
+
+[dependency-groups]
+dev = [
+    "prek>=0.4",
+    "pytest>=9.0",
+    "pytest-cov>=4.1",
+    "pytest-pyvista>=0.3",  # verify_image_cache fixture for gallery regression (see §10/§12)
+    "ruff>=0.15",
+    "ty>=0.0.1",
+    "zensical>=0.0.28",
+    # ipython is consumed by tests/test_jupyter.py and by the cookbook
+    # recipe (Jupyter backend handler returns IPython.display.Image).
+    "ipython>=8.0",
+    # trame stack is consumed by tests/test_web.py for the browser-served
+    # viewport. Pulled into dev so the test suite always has it; runtime
+    # users get it via pyvista[jupyter] (the bridge reuses pyvista's stack).
+    "trame>=3.6",
+    "trame-vtk>=2.8",
+    "trame-vuetify>=3.0",
+    # fake-bpy-module gives ty a resolvable `bpy` without installing the
+    # ~200 MB real bpy wheel. Pick the flavour matching the bpy major we'd
+    # ship to that Python version. The 5.1 stubs aren't published yet;
+    # 5.0 stubs cover the bpy 5.x line accurately enough for our use.
+    'fake-bpy-module-4.5 ; python_version == "3.11"',
+    'fake-bpy-module-5.0 ; python_version == "3.13"',
+    "imageio>=2.37.3",
+    "imageio-ffmpeg>=0.6.0",
+]
+
+[tool.ruff]
+preview = true
+# Scripts in benchmarks/ and examples/ are runnable CLI demonstrations
+# that intentionally use ``print``, hardcoded ``/tmp/`` paths, etc. They
+# pass formatting but skip lint (the gate is ``ruff check src/ tests/``).
+# Listing here so per-file invocations (e.g. via pre-commit) also skip.
+extend-exclude = ["benchmarks", "examples"]
+
+[tool.ruff.lint]
+select = ["ALL"]
+# The three entries below are not preferences — they are structural conflicts
+# in ruff itself (mutually exclusive rule pairs, or rules that fight the
+# formatter). Ruff's own docs require disabling one of each pair.
+ignore = [
+    "D203",   # mutually exclusive with D211 (we keep D211: no blank line before class docstring)
+    "D213",   # mutually exclusive with D212 (we keep D212: multi-line summary on first line)
+    "COM812", # ruff's own formatter recommends disabling this rule
+]
+
+# No project-specific or per-file ignores. If a rule fires, fix the code, not
+# the config. Inline `# noqa: RULE` is reserved for the few cases where the
+# rule literally cannot be satisfied (e.g. PyVista's component lifecycle
+# dunder names that the registry expects).
+
+[tool.ruff.lint.flake8-copyright]
+# Recognise SPDX-format headers as valid copyright notices. The default
+# regex only matches `Copyright (C) YYYY`; modern projects use SPDX.
+notice-rgx = "(?i)(Copyright|SPDX-FileCopyrightText)"
+
+[tool.ruff.lint.pylint]
+# PyVista's house style is to expose flat user-facing kwargs (see
+# ``pl.add_mesh``'s ~30 args), and the bridge follows suit. We pair
+# ``max-positional-args = 5`` (forces keyword-only for anything past
+# 5 positional, so call sites self-document the trailing args) with a
+# generous ``max-args = 12`` (room for the option-bundle refactor's
+# internal helpers, and most public methods). The two public methods
+# that legitimately exceed 12 (``show()`` with its 15 viewport /
+# Trame kwargs, ``export_animation_blend()`` with its 8 bake channels)
+# carry an inline ``# noqa: PLR0913`` at the signature.
+max-args = 12
+max-positional-args = 5
+
+[tool.ty.src]
+# The shader-graph translators (`translate/**`) and the engine-config
+# helper (`render/engine.py`) accumulate ~180 ty errors from
+# fake-bpy-module-5.0's stub imprecision: ``bpy.context.scene`` typed
+# as ``Scene | None``, ``world.node_tree`` typed as
+# ``ShaderNodeTree | None``, ``obj.data`` as a union of 14 data-block
+# kinds, render-engine attributes narrowed to single Literals, etc.
+# Almost none of those errors point at real bugs in the bridge; fixing
+# them would require ~150 inline ``cast(...)`` calls scattered through
+# already-dense shader-graph code and re-validation against every
+# fake-bpy-module bump. The exclude trades static coverage on these
+# modules for code that stays readable; the integration tests cover
+# the runtime behaviour end-to-end.
+#
+# Modules with thinner bpy contact (``_render_impl.py``,
+# ``render/_device.py``, ``hud/``) ARE in scope: their bpy interactions
+# go through small helpers that pay the cast cost once.
+exclude = [
+    "docs/**",
+    "examples/**",
+    "src/pyvista_blender/translate/**",
+    "src/pyvista_blender/render/engine.py",
+]
+
+# No rule ignores. `bpy` is resolved at type-check time via fake-bpy-module,
+# which is in the `dev` dependency group alongside ty itself.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+# pytest-pyvista image cache for visual regression. Used by the gallery
+# harness (§10/§12) once it lands; harmless to declare ahead of time.
+image_cache_dir = "tests/image_cache"
+markers = [
+    "gpu: marks tests that require a GPU (deselect with '-m \"not gpu\"')",
+    "bpy: marks tests that require bpy to be importable (deselect with '-m \"not bpy\"')",
+    "gallery: PyVista gallery regression tests",
+]
+filterwarnings = [
+    "error",
+    # bpy 5.x emits DeprecationWarnings for `Material.use_nodes` and
+    # `World.use_nodes` (slated for removal in Blender 6). Setting them is
+    # also a no-op since new materials/worlds default to use_nodes=True
+    # already. There's nothing actionable on our side until Blender 6
+    # ships and we drop the assignment entirely, so silence the warning
+    # rather than let it convert to an error that crashes bpy's startup
+    # mid-init (it corrupts ShaderNodeTree registration).
+    "ignore:'Material.use_nodes':DeprecationWarning",
+    "ignore:'World.use_nodes':DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src/pyvista_blender"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "@overload",
+]

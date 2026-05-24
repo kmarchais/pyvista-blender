@@ -1,0 +1,53 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Tooling caches
+.cache/
+.ruff_cache/
+.ty_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Zensical
+site/
+.zensical-cache/
+
+# Local renders / scratch
+*.png
+*.gif
+*.mp4
+*.webm
+*.mov
+*.blend
+*.blend1
+scratch/
+out/
+
+# Allow assets when they're real project artifacts
+!docs/assets/**/*.png
+!docs/assets/**/*.gif
+!docs/assets/**/*.mp4
+!docs/assets/**/*.webm
+!tests/image_cache/**/*.png
+!tests/fixtures/**/*.png
+
+# Local-only files (review dossier, maintainer publish checklist)
+pre-publish-review.html
+PUBLISH.md
