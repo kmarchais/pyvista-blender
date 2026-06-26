@@ -19,15 +19,20 @@ natively in Blender with **no Python script inside**.
 ## Showcase
 
 These structural mechanics examples start as PyVista scenes and use
-Blender for the final transparent VP9 WebM render.
+Blender for the final render. The animated WebP previews link to the
+transparent VP9 WebM files.
 
 <table>
   <tr>
     <td width="50%">
-      <video src="./docs/assets/examples/structural_mechanics/beam_bending.webm" controls autoplay loop muted playsinline></video>
+      <a href="./docs/assets/examples/structural_mechanics/beam_bending.webm">
+        <img src="./docs/assets/examples/structural_mechanics/beam_bending.webp" alt="I-beam bending stress animation" width="100%">
+      </a>
     </td>
     <td width="50%">
-      <video src="./docs/assets/examples/structural_mechanics/gyroid_compression.webm" controls autoplay loop muted playsinline></video>
+      <a href="./docs/assets/examples/structural_mechanics/gyroid_compression.webm">
+        <img src="./docs/assets/examples/structural_mechanics/gyroid_compression.webp" alt="Gyroid compression stress animation" width="100%">
+      </a>
     </td>
   </tr>
   <tr>
