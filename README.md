@@ -19,8 +19,8 @@ natively in Blender with **no Python script inside**.
 ## Showcase
 
 These structural mechanics examples start as PyVista scenes and use
-Blender for the final render. The animated WebP previews link to the
-transparent VP9 WebM files.
+Blender for the final render. The transparent animated WebP previews
+link to the transparent VP9 WebM files.
 
 <table>
   <tr>
