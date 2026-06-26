@@ -16,6 +16,31 @@ Cycles / Eevee Next for the final render. Export entire deforming,
 colour-evolving, lit animations to a single `.blend` that plays
 natively in Blender with **no Python script inside**.
 
+## Showcase
+
+These structural mechanics examples start as PyVista scenes and use
+Blender for the final render. The transparent animated WebP previews
+link to the transparent VP9 WebM files.
+
+<table>
+  <tr>
+    <td width="50%">
+      <a href="./docs/assets/examples/structural_mechanics/beam_bending.webm">
+        <img src="./docs/assets/examples/structural_mechanics/beam_bending.webp" alt="I-beam bending stress animation" width="100%">
+      </a>
+    </td>
+    <td width="50%">
+      <a href="./docs/assets/examples/structural_mechanics/gyroid_compression.webm">
+        <img src="./docs/assets/examples/structural_mechanics/gyroid_compression.webp" alt="Gyroid compression stress animation" width="100%">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td><strong>I-beam bending</strong><br>Fedoo stress animation with support and load geometry.</td>
+    <td><strong>Gyroid compression</strong><br>Metallic gyroid material revealed through a stress-alpha overlay.</td>
+  </tr>
+</table>
+
 ## Status
 
 Pre-release (`0.1.0.dev0`). The offline render path, the desktop and
