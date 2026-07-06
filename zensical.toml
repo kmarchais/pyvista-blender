@@ -8,7 +8,11 @@ site_name = "pyvista-blender"
 site_description = "Render PyVista plotter scenes through Blender (bpy) for photoreal output."
 site_author = "Kevin Marchais"
 site_url = "https://kmarchais.github.io/pyvista-blender"
+repo_url = "https://github.com/kmarchais/pyvista-blender"
+repo_name = "kmarchais/pyvista-blender"
 copyright = "Copyright &copy; 2026 Kevin Marchais"
+extra_css = ["stylesheets/showcase.css"]
+extra_javascript = ["javascripts/showcase-videos.js"]
 
 nav = [
     { "Home" = "index.md" },
@@ -70,7 +74,18 @@ features = [
     "search.highlight",
 ]
 
+[project.theme.icon]
+repo = "fontawesome/brands/github"
+
 [[project.theme.palette]]
+media = "(prefers-color-scheme)"
+primary = "deep-orange"
+accent = "teal"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
 scheme = "default"
 primary = "deep-orange"  # Blender orange
 accent = "teal"
@@ -78,11 +93,12 @@ toggle.icon = "lucide/sun"
 toggle.name = "Switch to dark mode"
 
 [[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
 scheme = "slate"
 primary = "deep-orange"
 accent = "teal"
 toggle.icon = "lucide/moon"
-toggle.name = "Switch to light mode"
+toggle.name = "Switch to system preference"
 
 [[project.extra.social]]
 icon = "fontawesome/brands/github"

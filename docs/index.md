@@ -4,9 +4,50 @@ icon: lucide/rocket
 
 # pyvista-blender
 
-Render [PyVista](https://docs.pyvista.org/) plotter scenes through [Blender](https://www.blender.org/) (`bpy`) for photoreal output.
+Render [PyVista](https://docs.pyvista.org/) plotter scenes through
+[Blender](https://www.blender.org/) (`bpy`) for photoreal figures,
+animations, and `.blend` handoff without changing how you build the
+scene.
 
-Build the scene once in PyVista. Choose VTK's preview or Blender's Cycles / Eevee Next for the final render.
+[Install](getting-started/installation.md){ .md-button .md-button--primary }
+[View on GitHub](https://github.com/kmarchais/pyvista-blender){ .md-button }
+[Browse examples](gallery/index.md){ .md-button }
+
+Build the scene once in PyVista. Choose VTK's preview while you work,
+then send the same live plotter to Blender's Cycles or Eevee Next for
+the final render.
+
+## Showcase
+
+These structural mechanics examples start as normal PyVista scenes.
+`pyvista-blender` translates the live plotter into Blender data-blocks
+and renders through Cycles.
+
+<div class="grid cards" markdown>
+
+-   <video class="showcase-video" data-showcase-video autoplay loop muted playsinline preload="metadata" poster="assets/examples/structural_mechanics/beam_bending.webp" width="100%" tabindex="0" title="Open I-beam bending video fullscreen" aria-label="Open I-beam bending video fullscreen">
+      <source src="assets/examples/structural_mechanics/beam_bending.webm" type="video/webm">
+      [Open the I-beam bending video](assets/examples/structural_mechanics/beam_bending.webm).
+    </video>
+
+    **I-beam bending**
+
+    Fedoo stress animation with support and load geometry.
+
+    [Example code](https://github.com/kmarchais/pyvista-blender/blob/main/examples/structural_mechanics/beam_bending.py){ .md-button .showcase-code-button }
+
+-   <video class="showcase-video" data-showcase-video autoplay loop muted playsinline preload="metadata" poster="assets/examples/structural_mechanics/gyroid_compression.webp" width="100%" tabindex="0" title="Open gyroid compression video fullscreen" aria-label="Open gyroid compression video fullscreen">
+      <source src="assets/examples/structural_mechanics/gyroid_compression.webm" type="video/webm">
+      [Open the gyroid compression video](assets/examples/structural_mechanics/gyroid_compression.webm).
+    </video>
+
+    **Gyroid compression**
+
+    Metallic gyroid material revealed through a stress-alpha overlay.
+
+    [Example code](https://github.com/kmarchais/pyvista-blender/blob/main/examples/structural_mechanics/gyroid_compression.py){ .md-button .showcase-code-button }
+
+</div>
 
 ## The shape of the API
 
@@ -30,11 +71,16 @@ PyVista's VTK preview with Cycles output in the same window:
 pl.blender.show()   # single window, mouse-driven, real-time Cycles
 ```
 
-## Why does this exist?
+## Why try it?
 
-VTK's renderer is fast and interactive. Blender's Cycles produces images
-suitable for paper figures, presentations, and explainer videos. This
-library is the bridge: same scene in Python, two render quality tiers.
+- Keep authoring in PyVista, including cameras, lights, scalars, glyphs,
+  subplots, HUD overlays, and animations.
+- Render publication-quality stills or videos through Blender without an
+  intermediate file export.
+- Export a `.blend` when you want to finish materials, lighting, or
+  animation timing directly in Blender.
+- Use `pl.blender.show()` as a rendered viewport for desktop, browser,
+  or Jupyter workflows.
 
 ## Features
 
@@ -53,7 +99,12 @@ library is the bridge: same scene in Python, two render quality tiers.
 - **Jupyter**: `pv.set_jupyter_backend("blender")` returns an inline `IPython.display.Image`. ([recipe](cookbook/jupyter.md))
 - **Authoring**: `pl.blender.export_blend(path)` to finish the scene in Blender. ([recipe](cookbook/export_blend.md))
 
-GPU auto-detection walks OptiX, CUDA, HIP, Metal, oneAPI, CPU. Engine and device strings resolve in three tiers: per-call kwarg, component attribute (`pl.blender.engine = ...`), module default (`pyvista_blender.config.*`). The identity-keyed Level-1 cache reuses `bpy.types.Mesh` and material data-blocks across renders on the same plotter.
+GPU auto-detection walks OptiX, CUDA, HIP, Metal, oneAPI, CPU. Engine
+and device strings resolve in three tiers: per-call kwarg, component
+attribute (`pl.blender.engine = ...`), module default
+(`pyvista_blender.config.*`). The identity-keyed Level-1 cache reuses
+`bpy.types.Mesh` and material data-blocks across renders on the same
+plotter.
 
 ## Where next
 
@@ -61,3 +112,5 @@ GPU auto-detection walks OptiX, CUDA, HIP, Metal, oneAPI, CPU. Engine and device
 - **[Cookbook](cookbook/pbr.md)** for one recipe per feature branch.
 - **[Gallery](gallery/index.md)** for the runnable examples under `examples/`.
 - **[Architecture](architecture.md)** for the translation pipeline and cache strategy.
+- **[GitHub](https://github.com/kmarchais/pyvista-blender)** for source,
+  issues, and releases.
