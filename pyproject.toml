@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "pyvista-blender"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Render PyVista plotter scenes through Blender (bpy) for photoreal output."
 readme = "README.md"
 # Dual Blender support: bpy 4.5 LTS pins Python 3.11; bpy 5.x pins Python 3.13.

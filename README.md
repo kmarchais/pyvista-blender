@@ -43,8 +43,8 @@ link to the transparent VP9 WebM files.
 
 ## Status
 
-Pre-release (`0.1.0.dev0`). The offline render path, the desktop and
-browser interactive viewports, the Jupyter inline backend, and the
+Initial public release (`0.1.0`). The offline render path, the desktop
+and browser interactive viewports, the Jupyter inline backend, and the
 full animation export to `.blend` are implemented and tested. The full
 ruff (`select = ["ALL"]`) + ty + format gate is clean.
 See the [features list in the docs](./docs/index.md#features) for the
