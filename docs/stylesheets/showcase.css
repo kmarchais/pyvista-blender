@@ -1,0 +1,15 @@
+.showcase-video {
+  background: #000;
+  border-radius: 0.2rem;
+  cursor: zoom-in;
+  display: block;
+}
+
+.showcase-video:focus-visible {
+  outline: 0.12rem solid var(--md-accent-fg-color);
+  outline-offset: 0.12rem;
+}
+
+.showcase-code-button {
+  margin-top: 0.4rem;
+}
