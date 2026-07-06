@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-07-06
+
 Initial release of `pyvista-blender`. See the [features list](docs/index.md#features)
 for the full surface this version covers.
 
@@ -14,4 +16,5 @@ for the full surface this version covers.
   example-code buttons, a visible GitHub link, and automatic light/dark theme
   selection.
 
-[Unreleased]: https://github.com/kmarchais/pyvista-blender/compare/v0.0.0...HEAD
+[Unreleased]: https://github.com/kmarchais/pyvista-blender/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/kmarchais/pyvista-blender/releases/tag/v0.1.0
