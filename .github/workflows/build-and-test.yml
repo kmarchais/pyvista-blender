@@ -41,7 +41,7 @@ jobs:
       - name: Run bpy-free tests
         env:
           PYVISTA_OFF_SCREEN: "true"
-        run: uv run pytest -ra -m "not bpy"
+        run: uv run --no-sync pytest -ra -m "not bpy"
 
   # Dedicated lane that installs the real bpy wheel and runs the full
   # suite, including @pytest.mark.bpy tests that exercise translators,

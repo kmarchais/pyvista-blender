@@ -25,27 +25,27 @@ and renders through Cycles.
 
 <div class="grid cards" markdown>
 
--   <video class="showcase-video" data-showcase-video autoplay loop muted playsinline preload="metadata" poster="assets/examples/structural_mechanics/beam_bending.webp" width="100%" tabindex="0" title="Open I-beam bending video fullscreen" aria-label="Open I-beam bending video fullscreen">
-      <source src="assets/examples/structural_mechanics/beam_bending.webm" type="video/webm">
-      [Open the I-beam bending video](assets/examples/structural_mechanics/beam_bending.webm).
-    </video>
+- <video class="showcase-video" data-showcase-video autoplay loop muted playsinline preload="metadata" poster="assets/examples/structural_mechanics/beam_bending.webp" width="100%" tabindex="0" title="Open I-beam bending video fullscreen" aria-label="Open I-beam bending video fullscreen">
+    <source src="assets/examples/structural_mechanics/beam_bending.webm" type="video/webm">
+    [Open the I-beam bending video](assets/examples/structural_mechanics/beam_bending.webm).
+  </video>
 
-    **I-beam bending**
+  **I-beam bending**
 
-    Fedoo stress animation with support and load geometry.
+  Fedoo stress animation with support and load geometry.
 
-    [Example code](https://github.com/kmarchais/pyvista-blender/blob/main/examples/structural_mechanics/beam_bending.py){ .md-button .showcase-code-button }
+  [Example code](https://github.com/kmarchais/pyvista-blender/blob/main/examples/structural_mechanics/beam_bending.py){ .md-button .showcase-code-button }
 
--   <video class="showcase-video" data-showcase-video autoplay loop muted playsinline preload="metadata" poster="assets/examples/structural_mechanics/gyroid_compression.webp" width="100%" tabindex="0" title="Open gyroid compression video fullscreen" aria-label="Open gyroid compression video fullscreen">
-      <source src="assets/examples/structural_mechanics/gyroid_compression.webm" type="video/webm">
-      [Open the gyroid compression video](assets/examples/structural_mechanics/gyroid_compression.webm).
-    </video>
+- <video class="showcase-video" data-showcase-video autoplay loop muted playsinline preload="metadata" poster="assets/examples/structural_mechanics/gyroid_compression.webp" width="100%" tabindex="0" title="Open gyroid compression video fullscreen" aria-label="Open gyroid compression video fullscreen">
+    <source src="assets/examples/structural_mechanics/gyroid_compression.webm" type="video/webm">
+    [Open the gyroid compression video](assets/examples/structural_mechanics/gyroid_compression.webm).
+  </video>
 
-    **Gyroid compression**
+  **Gyroid compression**
 
-    Metallic gyroid material revealed through a stress-alpha overlay.
+  Metallic gyroid material revealed through a stress-alpha overlay.
 
-    [Example code](https://github.com/kmarchais/pyvista-blender/blob/main/examples/structural_mechanics/gyroid_compression.py){ .md-button .showcase-code-button }
+  [Example code](https://github.com/kmarchais/pyvista-blender/blob/main/examples/structural_mechanics/gyroid_compression.py){ .md-button .showcase-code-button }
 
 </div>
 
