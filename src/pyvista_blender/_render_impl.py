@@ -482,20 +482,34 @@ def do_animate(
             )
             frame_paths.append(frame_path)
 
-        # Read every frame back as a numpy array so the imageio writer
-        # gets a single in-memory stack — avoids any "is this a glob?"
-        # ambiguity with the writer plugins.
-        stack = [iio.imread(p) for p in frame_paths]
+        _encode_animation_frames(frame_paths, output, suffix=suffix, fps=fps)
+
+    return output, cache
+
+
+def _encode_animation_frames(
+    frame_paths: list[Path],
+    output: str,
+    *,
+    suffix: str,
+    fps: int,
+) -> None:
+    """Mux rendered PNG frames into the destination container."""
+    # Read every frame back as a numpy array so the imageio writer
+    # gets a single in-memory stack — avoids any "is this a glob?"
+    # ambiguity with the writer plugins.
+    stack = [iio.imread(p) for p in frame_paths]
 
     if suffix in _GIF_EXTENSIONS:
         # imageio's gif plugin takes ``duration`` per frame in seconds.
-        iio.imwrite(output, stack, duration=1.0 / float(fps), loop=0)
+        # disposal=2 clears each frame to background before drawing the
+        # next; without it transparent pixels composite over the previous
+        # frame and opaque content ghosts across the animation.
+        iio.imwrite(output, stack, duration=1.0 / float(fps), loop=0, disposal=2)
     else:
         # Pick the codec from the container: webm uses VP9, the rest
         # ride libx264. imageio-ffmpeg reads ``fps`` directly.
         iio.imwrite(output, stack, fps=int(fps), codec=_FFMPEG_CODECS[suffix])
-
-    return output, cache
 
 
 def do_export_blend(
