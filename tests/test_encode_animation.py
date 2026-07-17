@@ -15,6 +15,9 @@ import imageio.v3 as iio
 import numpy as np
 import pytest
 
+# Exercise the isolated muxer without requiring a full Blender render.
+from pyvista_blender._render_impl import _encode_animation_frames  # noqa: PLC2701
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -46,10 +49,6 @@ def test_gif_transparent_frames_do_not_ghost(tmp_path: Path) -> None:
     through all later frames. The writer must request disposal mode 2
     (restore to background) to clear between frames.
     """
-    from pyvista_blender._render_impl import (  # noqa: PLC0415, PLC2701
-        _encode_animation_frames,
-    )
-
     frame_paths = []
     for ordinal, x0 in enumerate((8, 80)):
         path = tmp_path / f"frame_{ordinal:06d}.png"
