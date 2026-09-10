@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Line-only meshes, including outlines and polylines, now render with the actor's
+  color and `line_width`, including cached position and width updates.
+
 - GIF animations rendered with `transparent_bg=True` no longer ghost previous
   frames through transparent pixels: the writer now requests disposal mode 2
   (restore to background) so each frame is cleared before the next is drawn.

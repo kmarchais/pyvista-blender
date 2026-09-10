@@ -51,6 +51,9 @@ def actor_needs_wire(actor: pv.Actor) -> bool:
 
     """
     prop = actor.prop
+    dataset = actor.mapper.dataset
+    if bool(getattr(dataset, "n_lines", 0)) and dataset.n_lines == dataset.n_cells:
+        return False
     return _is_wireframe_style(prop) or bool(getattr(prop, "show_edges", False))
 
 

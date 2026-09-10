@@ -98,3 +98,21 @@ Outputs land under `docs/assets/examples/styles/` as
 - **`add_mesh(..., style="points", scalars=...)` works.** Per-point
   scalars colour the points via a POINT-domain `scalars` Color
   Attribute, same machinery as the mesh path.
+
+## Line-only meshes
+
+Outlines and polylines render as thin tubes, using the actor's color and
+`line_width`. Thickness uses the same world-unit approximation as wireframes.
+
+```python
+from pathlib import Path
+
+import pyvista as pv
+
+pl = pv.Plotter()
+pl.add_mesh(pv.Box().outline(), color="orange", line_width=5)
+pl.blender.render(str(Path("outline.png").resolve()))
+pl.close()
+```
+
+![Rendered box outline](../assets/outline.png)
