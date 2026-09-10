@@ -26,6 +26,7 @@ import numpy as np
 from mathutils import Matrix
 
 from pyvista_blender import config
+from pyvista_blender.translate.wireframe import thickness_for
 
 if TYPE_CHECKING:
     import pyvista as pv
@@ -216,6 +217,10 @@ def _surface_with_point_scalars(actor: pv.Actor) -> pv.PolyData:
     else:
         surface = dataset.copy()
 
+    if surface.n_lines and surface.n_lines == surface.n_cells:
+        surface = surface.tube(
+            radius=thickness_for(actor.prop) / 2, n_sides=8, capping=True
+        )
     return surface.triangulate()
 
 

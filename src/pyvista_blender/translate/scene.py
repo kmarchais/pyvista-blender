@@ -365,7 +365,7 @@ def _reconcile_actor_wireframe(
     """
     prop = actor.prop
     needs_wire = wireframe.actor_needs_wire(actor)
-    wire_only = str(getattr(prop, "style", "")).lower() == "wireframe"
+    wire_only = needs_wire and str(getattr(prop, "style", "")).lower() == "wireframe"
 
     # Reset render visibility every call so previous-render state doesn't leak.
     surface_obj.hide_render = wire_only
