@@ -50,9 +50,9 @@ statistics, and `"Finished"` after the image and overlays are written:
 ```python
 import pyvista as pv
 
-plotter = pv.Plotter(off_screen=True, window_size=[320, 240])
-plotter.add_mesh(pv.Sphere(), color="coral")
-plotter.blender.render("sphere.png", samples=32, on_progress=print)
+plotter = pv.Plotter()
+plotter.add_mesh(pv.Sphere())
+plotter.blender.render("sphere.png", on_progress=print)
 plotter.close()
 ```
 
