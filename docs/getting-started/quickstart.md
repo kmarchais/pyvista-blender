@@ -41,3 +41,28 @@ pl.blender.show()   # one window, mouse rotates / zooms, Cycles renders in real-
 
 See [Architecture](../architecture.md) for the design of the single-window
 overlay and the three-tier sample regime.
+
+## Render status callbacks
+
+Pass `on_progress` to receive `"Preparing scene"`, `"Rendering"`, Blender's native render
+statistics, and `"Finished"` after the image and overlays are written:
+
+```python
+import pyvista as pv
+
+plotter = pv.Plotter(off_screen=True, window_size=[320, 240])
+plotter.add_mesh(pv.Sphere(), color="coral")
+try:
+    plotter.blender.render("sphere.png", samples=32, on_progress=print)
+finally:
+    plotter.close()
+```
+
+Statistics vary by Blender version and engine; they are status strings, not
+normalized percentages. Subplot renders may restart sample counts per tile.
+Callbacks run synchronously inside the render operation. Keep them brief and
+do not mutate the scene, start another render, or write from background threads.
+Callback output is visible even while native Blender output is silenced.
+Exceptions from native-statistics callbacks are re-raised after Blender returns;
+no `"Finished"` message is emitted if rendering or a callback fails. The temporary
+handler and output descriptors are restored on exit.

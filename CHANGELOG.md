@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `pl.blender.render(..., on_progress=callback)` for render status updates.
+
 ### Fixed
 
 - GIF animations rendered with `transparent_bg=True` no longer ghost previous

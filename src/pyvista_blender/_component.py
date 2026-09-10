@@ -460,6 +460,7 @@ class BlenderComponent:
         samples: int | None = None,
         denoise: bool | None = None,
         transparent_bg: bool | None = None,
+        on_progress: Callable[[str], None] | None = None,
     ) -> str:
         """Translate the PyVista scene to ``bpy`` and render one frame.
 
@@ -483,6 +484,13 @@ class BlenderComponent:
             Whether to enable the OpenImageDenoise post-pass.
         transparent_bg
             Whether the film alpha is preserved (sets ``film_transparent``).
+
+        on_progress
+            Optional status callback. Receives "Preparing scene", "Rendering",
+            native render statistics, then "Finished" after output is complete.
+            Native messages vary by engine/version and are not percentages.
+            Callback failures propagate after rendering; no completion event is
+            sent on failure. Do not mutate the scene or start a nested render.
 
         Returns
         -------
@@ -517,6 +525,7 @@ class BlenderComponent:
             ),
             cache=self._scene,
             sources=self._sources(),
+            on_progress=on_progress,
         )
         return output
 
