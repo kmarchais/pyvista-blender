@@ -50,6 +50,7 @@ from pyvista_blender._options import (
     _PlotterSources,
     _SubplotTileContext,
 )
+from pyvista_blender._progress import report_render_progress
 from pyvista_blender.hud import composite_hud_overlays
 from pyvista_blender.render.engine import configure_engine
 from pyvista_blender.translate import background, camera, light
@@ -130,6 +131,7 @@ def do_render(
     engine_params: _EngineParams,
     cache: SceneCache | None,
     sources: _PlotterSources = _EMPTY_SOURCES,
+    on_progress: Callable[[str], None] | None = None,
 ) -> SceneCache:
     """Build the bpy scene from ``plotter`` and render to ``output``.
 
@@ -154,6 +156,9 @@ def do_render(
         on the user's grid propagate without ``actor.mapper.dataset``
         indirection). Defaults to an empty bundle.
 
+    on_progress
+        Optional callback for native render statistics and lifecycle messages.
+
     Returns
     -------
     SceneCache
@@ -161,34 +166,44 @@ def do_render(
         on this plotter.
 
     """
+    if on_progress is not None:
+        on_progress("Preparing scene")
     cache = build_scene_from_plotter(
         plotter, cache, sources.glyphs, sources.volume_sources
     )
+    # Scene initialization resets Blender handlers. Subscribe only afterwards.
+    # Blender 4.2+ passes a string; fake-bpy-module-5.0 still annotates Scene.
+    handlers = cast("list[Callable[[str], None]]", bpy.app.handlers.render_stats)
+    with report_render_progress(on_progress, handlers):
+        # Multi-renderer (subplot) layouts go through the tile path so each
+        # viewport gets its own camera / lights / background. Single-
+        # renderer plotters keep the fast path: one Cycles call, HUD
+        # composite over the full frame.
+        if len(plotter.renderers) > 1:
+            _render_subplot_tiles(
+                plotter, output, engine_params=engine_params, cache=cache
+            )
+            return cache
 
-    # Multi-renderer (subplot) layouts go through the tile path so each
-    # viewport gets its own camera / lights / background. Single-
-    # renderer plotters keep the fast path: one Cycles call, HUD
-    # composite over the full frame.
-    if len(plotter.renderers) > 1:
-        _render_subplot_tiles(plotter, output, engine_params=engine_params, cache=cache)
-        return cache
-
-    with silence_bpy_stderr():
-        configure_engine(
-            engine=engine_params.engine,
-            device=engine_params.device,
-            samples=engine_params.samples,
-            denoise=engine_params.denoise,
-            transparent_bg=engine_params.transparent_bg,
+        with silence_bpy_stderr():
+            configure_engine(
+                engine=engine_params.engine,
+                device=engine_params.device,
+                samples=engine_params.samples,
+                denoise=engine_params.denoise,
+                transparent_bg=engine_params.transparent_bg,
+            )
+        scene = _active_scene()
+        scene.render.filepath = output
+        with silence_bpy_stderr():
+            bpy.ops.render.render(write_still=True)
+        composite_hud_overlays(
+            plotter,
+            output,
+            int(scene.render.resolution_x),
+            int(scene.render.resolution_y),
         )
-    scene = _active_scene()
-    scene.render.filepath = output
-    with silence_bpy_stderr():
-        bpy.ops.render.render(write_still=True)
-    composite_hud_overlays(
-        plotter, output, int(scene.render.resolution_x), int(scene.render.resolution_y)
-    )
-    return cache
+        return cache
 
 
 def _render_subplot_tiles(
