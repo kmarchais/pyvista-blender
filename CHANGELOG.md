@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `pl.blender.render(..., on_progress=callback)` for render status updates.
 
+- Add `pl.blender.add_glyph(..., rotation="field")`, a point-data vector field of
+  Euler XYZ angles in radians giving each instance its full orientation. `orient`
+  can only align an instance's +Z to a vector, which leaves roll about that axis
+  undefined; that suits arrows and cones but not geometry that tumbles. `rotation`
+  takes precedence over `orient` when both are given, and is captured by
+  `export_animation_blend(bake_glyphs=True)` alongside the existing channels.
+
 ### Fixed
 
 - Line-only meshes, including outlines and polylines, now render with the actor's

@@ -124,7 +124,7 @@ no auto-execution prompt:
 | Scalars     | Packed PNG (rows = frames, cols = vertices / cells) + Geometry Nodes  |
 | Lights      | Per-light keyframes on `location`, `rotation`, `energy`, `color`      |
 | Transforms  | Object-level location / rotation / scale keyframes                    |
-| Glyphs      | Float-image baked positions / orient / scale + Geometry Nodes sampler |
+| Glyphs      | Float-image baked positions / orient / rotation / scale + GN sampler  |
 
 All channels are opt-in via dedicated kwargs (`bake_camera`,
 `bake_deformation`, `bake_scalars`, `bake_lights`, `bake_transforms`,

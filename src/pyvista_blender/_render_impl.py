@@ -917,12 +917,13 @@ def _sample_glyphs(
 ) -> None:
     """Snapshot every registered glyph spec's source-dataset state at one frame.
 
-    Each spec contributes up to three per-frame channels — positions,
-    ``orient`` vectors, ``scale`` scalars — keyed by the spec's ordinal
-    in the plotter's glyph registry. Only the channels the spec
-    actually declares (via ``add_glyph(orient=..., scale=...)``) are
-    captured. The captured arrays drive the per-channel atlas images
-    that :func:`_bake_glyph_animation` packs into the saved .blend.
+    Each spec contributes up to four per-frame channels — positions,
+    ``orient`` vectors, ``rotation`` Euler triples, ``scale`` scalars —
+    keyed by the spec's ordinal in the plotter's glyph registry. Only
+    the channels the spec actually declares (via
+    ``add_glyph(orient=..., rotation=..., scale=...)``) are captured.
+    The captured arrays drive the per-channel atlas images that
+    :func:`_bake_glyph_animation` packs into the saved .blend.
     """
     for ordinal, spec in enumerate(specs):
         per_spec = glyph_samples.setdefault(ordinal, {})
@@ -934,6 +935,12 @@ def _sample_glyphs(
                 spec.source.point_data[spec.orient], dtype=np.float32
             ).copy()
             per_spec.setdefault("orient", []).append((frame_index, vectors))
+
+        if spec.rotation and spec.rotation in spec.source.point_data:
+            eulers = np.asarray(
+                spec.source.point_data[spec.rotation], dtype=np.float32
+            ).copy()
+            per_spec.setdefault("rotation", []).append((frame_index, eulers))
 
         if spec.scale and spec.scale in spec.source.point_data:
             scalars = np.asarray(

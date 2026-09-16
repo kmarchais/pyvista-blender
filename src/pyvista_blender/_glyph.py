@@ -37,6 +37,12 @@ class GlyphSpec:
         Name of a point-data 3D vector field used to orient each
         instance (instance's +Z aligns to that vector). ``None`` →
         identity rotation.
+    rotation
+        Name of a point-data 3D vector field giving each instance's
+        full orientation as Euler XYZ angles in radians. Takes
+        precedence over ``orient``, which can only align an axis and
+        leaves roll about it undefined. ``None`` → fall back to
+        ``orient``.
     scale
         Name of a point-data scalar field used to scale each instance.
         ``None`` → uniform scale.
@@ -51,6 +57,7 @@ class GlyphSpec:
     source: pv.DataSet
     geom: pv.DataSet
     orient: str | None = None
+    rotation: str | None = None
     scale: str | None = None
     factor: float = 1.0
     name: str | None = None
