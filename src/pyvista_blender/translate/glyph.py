@@ -10,9 +10,13 @@ and using Blender's :class:`GeometryNodeInstanceOnPoints` to generate
 the instances at render time: one ``V``-vertex geom data block + one
 ``N``-vertex points data block + one node group.
 
-Per-point ``orient`` (3D vector field) is read via a
-``GeometryNodeInputNamedAttribute`` and fed through
-``FunctionNodeAlignRotationToVector`` to produce the instance rotation.
+Per-point ``rotation`` (3D vector field of Euler XYZ angles, radians)
+is read via a ``GeometryNodeInputNamedAttribute`` and converted by
+``FunctionNodeEulerToRotation``, giving each instance its full
+orientation. Failing that, ``orient`` (3D vector field) goes through
+``FunctionNodeAlignRotationToVector``, which aligns the instance's +Z
+to the vector and leaves roll about that axis undefined — enough for
+arrows and cones, not for a tumbling rigid body.
 Per-point ``scale`` (scalar field) is multiplied by the global
 ``factor`` and fed into the ``Scale`` socket directly. Either or both
 can be omitted — defaults to identity rotation / unit scale.
@@ -110,8 +114,9 @@ def _build_geom_object(geom: pv.DataSet, base_name: str) -> bpy.types.Object:
 def _build_points_object(spec: GlyphSpec, base_name: str) -> bpy.types.Object:
     """Materialise the source points as a vertex-only bpy mesh.
 
-    Per-point orient (vector) and scale (scalar) fields are written to
-    POINT-domain attributes so the GN node group can read them by name.
+    Per-point rotation (Euler vector), orient (vector) and scale
+    (scalar) fields are written to POINT-domain attributes so the GN
+    node group can read them by name.
 
     Returns
     -------
@@ -133,6 +138,15 @@ def _build_points_object(spec: GlyphSpec, base_name: str) -> bpy.types.Object:
             name="pv_orient", type="FLOAT_VECTOR", domain="POINT"
         )
         attr.data.foreach_set("vector", vectors.ravel())
+
+    if spec.rotation and spec.rotation in spec.source.point_data:
+        eulers = np.ascontiguousarray(
+            spec.source.point_data[spec.rotation], dtype=np.float32
+        )
+        attr = mesh_data.attributes.new(
+            name="pv_rotation", type="FLOAT_VECTOR", domain="POINT"
+        )
+        attr.data.foreach_set("vector", eulers.ravel())
 
     if spec.scale and spec.scale in spec.source.point_data:
         scalars = np.ascontiguousarray(
@@ -173,8 +187,8 @@ def _attach_instancer_modifier(
     tree.links.new(group_input.outputs["Geometry"], instancer.inputs["Points"])
     tree.links.new(object_info.outputs["Geometry"], instancer.inputs["Instance"])
 
-    if spec.orient:
-        rotation_socket = _build_orient_chain(tree)
+    rotation_socket = _resolve_rotation_socket(tree, spec)
+    if rotation_socket is not None:
         tree.links.new(rotation_socket, instancer.inputs["Rotation"])
 
     scale_socket = _build_scale_chain(tree, spec)
@@ -184,6 +198,49 @@ def _attach_instancer_modifier(
 
     modifier = points_obj.modifiers.new(name="PVGlyph", type="NODES")
     modifier.node_group = tree
+
+
+def _resolve_rotation_socket(
+    tree: bpy.types.NodeTree, spec: GlyphSpec
+) -> bpy.types.NodeSocket | None:
+    """Pick the chain that drives the instancer's ``Rotation`` socket.
+
+    ``rotation`` wins over ``orient``: a full Euler triple fixes all
+    three degrees of freedom, where aligning an axis to a vector fixes
+    only two.
+
+    Returns
+    -------
+    bpy.types.NodeSocket | None
+        The socket to link, or ``None`` when the spec declares neither
+        field and instances keep the identity rotation.
+
+    """
+    if spec.rotation:
+        return _build_rotation_chain(tree)
+    if spec.orient:
+        return _build_orient_chain(tree)
+    return None
+
+
+def _build_rotation_chain(tree: bpy.types.NodeTree) -> bpy.types.NodeSocket:
+    """Read ``pv_rotation`` as Euler XYZ radians and convert to a rotation.
+
+    Returns
+    -------
+    bpy.types.NodeSocket
+        The terminal ``Rotation`` socket to plug into the instancer.
+
+    """
+    named_attr = tree.nodes.new("GeometryNodeInputNamedAttribute")
+    named_attr.location = (-400, 260)
+    named_attr.data_type = "FLOAT_VECTOR"
+    named_attr.inputs["Name"].default_value = "pv_rotation"
+
+    to_rotation = tree.nodes.new("FunctionNodeEulerToRotation")
+    to_rotation.location = (-200, 260)
+    tree.links.new(named_attr.outputs["Attribute"], to_rotation.inputs["Euler"])
+    return to_rotation.outputs["Rotation"]
 
 
 def _build_orient_chain(tree: bpy.types.NodeTree) -> bpy.types.NodeSocket:
@@ -300,7 +357,7 @@ def build_glyph_channel_image(
     pixels = np.zeros((n_frames, n_points, 4), dtype=np.float32)
     pixels[..., 3] = 1.0
     for row, (_frame_index, values) in enumerate(frames):
-        if channel_name in {"positions", "orient"}:
+        if channel_name in {"positions", "orient", "rotation"}:
             pixels[row, :, :3] = values
         else:
             pixels[row, :, 0] = values
@@ -325,7 +382,8 @@ def inject_glyph_channel_override(
     ``((point_index + 0.5) / n_points, (frame - frame_start + 0.5) / n_frames)``
     and either pipes the result into a ``Set Position`` node (positions
     channel) or a ``Store Named Attribute`` node (``pv_orient`` /
-    ``pv_scale``). The stored attribute is read by the existing
+    ``pv_rotation`` / ``pv_scale``). The stored attribute is read by the
+    existing
     ``Input Named Attribute`` nodes downstream, so the instancer
     consumes the per-frame value without further wiring changes.
     """
@@ -352,9 +410,9 @@ def inject_glyph_channel_override(
     store = tree.nodes.new("GeometryNodeStoreNamedAttribute")
     store.location = (-300, 200)
     store.domain = "POINT"
-    if channel_name == "orient":
+    if channel_name in {"orient", "rotation"}:
         store.data_type = "FLOAT_VECTOR"
-        store.inputs["Name"].default_value = "pv_orient"
+        store.inputs["Name"].default_value = f"pv_{channel_name}"
         tree.links.new(sampler_socket, store.inputs["Value"])
     else:
         store.data_type = "FLOAT"
