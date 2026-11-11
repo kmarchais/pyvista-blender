@@ -38,6 +38,8 @@ import bpy
 import matplotlib as mpl
 import numpy as np
 
+from pyvista_blender.translate import colorspace
+
 if TYPE_CHECKING:
     import pyvista as pv
 
@@ -570,5 +572,5 @@ def _wire_color_input(
         attr.location = (socket.node.location.x - 250, socket.node.location.y)
         nt.links.new(attr.outputs["Color"], socket)
     else:
-        r, g, b = actor.prop.color.float_rgb
+        r, g, b = colorspace.linear_rgb(actor.prop.color.float_rgb)
         socket.default_value = (r, g, b, 1.0)

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import sys
 import time
+from contextlib import contextmanager
 from typing import TYPE_CHECKING, Literal, TypedDict, cast, overload
 
 import pyvista as pv
@@ -41,13 +42,13 @@ from pyvista_blender.interactive.visibility import (
 )
 
 if TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Iterator
 
     import numpy as np
     import vtk
     from pyvista.plotting.render_window_interactor import RenderWindowInteractor
 
-    from pyvista_blender.config import Device, Engine
+    from pyvista_blender.config import Device, Engine, Lighting
     from pyvista_blender.interactive.overlay import OverlayHandles
     from pyvista_blender.interactive.visibility import VisibilitySnapshot
     from pyvista_blender.translate.scene import SceneCache
@@ -156,6 +157,7 @@ class BlenderComponent:
         self.samples: int | _Unset = _UNSET
         self.denoise: bool | _Unset = _UNSET
         self.transparent_bg: bool | _Unset = _UNSET
+        self.lighting: Lighting | _Unset = _UNSET
 
         # Interactive viewport state, populated when ``show()`` runs.
         # ``_overlay`` holds the layer-1 VTK handles; ``_visibility``
@@ -460,6 +462,7 @@ class BlenderComponent:
         samples: int | None = None,
         denoise: bool | None = None,
         transparent_bg: bool | None = None,
+        lighting: Lighting | None = None,
         on_progress: Callable[[str], None] | None = None,
     ) -> str:
         """Translate the PyVista scene to ``bpy`` and render one frame.
@@ -484,7 +487,10 @@ class BlenderComponent:
             Whether to enable the OpenImageDenoise post-pass.
         transparent_bg
             Whether the film alpha is preserved (sets ``film_transparent``).
-
+        lighting
+            ``"studio"`` (soft shadowed area-light rig, the default) or
+            ``"vtk"`` (the plotter's own lights). See
+            :data:`~pyvista_blender.config.Lighting`.
         on_progress
             Optional status callback. Receives "Preparing scene", "Rendering",
             native render statistics, then "Finished" after output is complete.
@@ -511,22 +517,23 @@ class BlenderComponent:
         # without breaking this contract.
         from pyvista_blender._render_impl import do_render  # noqa: PLC0415
 
-        self._scene = do_render(
-            self._plotter,
-            output,
-            engine_params=_EngineParams(
-                engine=resolved_engine,
-                device=self.resolve_config("device", call_value=device),
-                samples=self.resolve_config("samples", call_value=samples),
-                denoise=self.resolve_config("denoise", call_value=denoise),
-                transparent_bg=self.resolve_config(
-                    "transparent_bg", call_value=transparent_bg
+        with self._lighting(lighting):
+            self._scene = do_render(
+                self._plotter,
+                output,
+                engine_params=_EngineParams(
+                    engine=resolved_engine,
+                    device=self.resolve_config("device", call_value=device),
+                    samples=self.resolve_config("samples", call_value=samples),
+                    denoise=self.resolve_config("denoise", call_value=denoise),
+                    transparent_bg=self.resolve_config(
+                        "transparent_bg", call_value=transparent_bg
+                    ),
                 ),
-            ),
-            cache=self._scene,
-            sources=self._sources(),
-            on_progress=on_progress,
-        )
+                cache=self._scene,
+                sources=self._sources(),
+                on_progress=on_progress,
+            )
         return output
 
     def animate(
@@ -541,6 +548,7 @@ class BlenderComponent:
         samples: int | None = None,
         denoise: bool | None = None,
         transparent_bg: bool | None = None,
+        lighting: Lighting | None = None,
     ) -> str:
         """Render the scene as an animation.
 
@@ -560,7 +568,7 @@ class BlenderComponent:
             Frame indices to render.
         fps
             Output frame rate.
-        engine, device, samples, denoise, transparent_bg
+        engine, device, samples, denoise, transparent_bg, lighting
             Same three-tier resolution as :meth:`render`.
 
         Returns
@@ -577,24 +585,25 @@ class BlenderComponent:
         # plain ``import pyvista_blender`` / ``pl.blender`` access.
         from pyvista_blender._render_impl import do_animate  # noqa: PLC0415
 
-        _, self._scene = do_animate(
-            self._plotter,
-            output,
-            updater,
-            frames,
-            fps=int(fps),
-            engine_params=_EngineParams(
-                engine=resolved_engine,
-                device=self.resolve_config("device", call_value=device),
-                samples=self.resolve_config("samples", call_value=samples),
-                denoise=self.resolve_config("denoise", call_value=denoise),
-                transparent_bg=self.resolve_config(
-                    "transparent_bg", call_value=transparent_bg
+        with self._lighting(lighting):
+            _, self._scene = do_animate(
+                self._plotter,
+                output,
+                updater,
+                frames,
+                fps=int(fps),
+                engine_params=_EngineParams(
+                    engine=resolved_engine,
+                    device=self.resolve_config("device", call_value=device),
+                    samples=self.resolve_config("samples", call_value=samples),
+                    denoise=self.resolve_config("denoise", call_value=denoise),
+                    transparent_bg=self.resolve_config(
+                        "transparent_bg", call_value=transparent_bg
+                    ),
                 ),
-            ),
-            cache=self._scene,
-            sources=self._sources(),
-        )
+                cache=self._scene,
+                sources=self._sources(),
+            )
         return output
 
     def show(  # noqa: PLR0913
@@ -1381,6 +1390,35 @@ class BlenderComponent:
             )
             raise ValueError(msg)
         return resolved
+
+    @contextmanager
+    def _lighting(self, call_value: Lighting | None) -> Iterator[None]:
+        """Set :data:`config.lighting` for one render, then restore it.
+
+        Resolved like the other options (call > component > module). The
+        translators read ``config.lighting``, so the resolved value is
+        put there for the duration of the render rather than threaded
+        through every translator.
+
+        Yields
+        ------
+        None
+            Inside the block, ``config.lighting`` is the resolved value.
+
+        """
+        component_value = self.lighting
+        if call_value is not None:
+            resolved = call_value
+        elif component_value is not _UNSET:
+            resolved = cast("Lighting", component_value)
+        else:
+            resolved = config.lighting
+        original = config.lighting
+        config.lighting = resolved
+        try:
+            yield
+        finally:
+            config.lighting = original
 
     @overload
     def resolve_config(

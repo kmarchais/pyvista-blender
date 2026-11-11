@@ -23,11 +23,14 @@ view transform.
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import bpy
 from mathutils import Euler
 
+from pyvista_blender import config
+from pyvista_blender.studio import studio_rig, uses_studio_rig
+from pyvista_blender.translate import colorspace
 from pyvista_blender.translate.camera import look_at_matrix
 
 if TYPE_CHECKING:
@@ -52,14 +55,29 @@ def translate_lights(source: pv.BasePlotter | object) -> None:
         renderer's lights, used by the subplot tile path to produce a
         tile-specific light setup).
 
+    Raises
+    ------
+    ValueError
+        When :data:`pyvista_blender.config.lighting` is not one of
+        :data:`~pyvista_blender.config.SUPPORTED_LIGHTING`.
+
     """
     # If ``source`` exposes a ``renderer`` attribute we assume it's a
     # plotter and read lights from the active renderer; otherwise
     # assume ``source`` is already a renderer.
-    if hasattr(source, "renderer"):
-        lights = list(getattr(source.renderer, "lights", []))
-    else:
-        lights = list(getattr(source, "lights", []))
+    renderer = source.renderer if hasattr(source, "renderer") else source
+    lighting = str(config.lighting)
+    if lighting not in config.SUPPORTED_LIGHTING:
+        supported = list(config.SUPPORTED_LIGHTING)
+        msg = f"unknown lighting {lighting!r}; supported: {supported}"
+        raise ValueError(msg)
+    if (
+        lighting == "studio"
+        and uses_studio_rig(cast("pv.Renderer", renderer))
+        and _add_studio_lights(renderer)
+    ):
+        return
+    lights = list(getattr(renderer, "lights", []))
 
     if not lights:
         _add_fallback_sun()
@@ -80,7 +98,7 @@ def _translate_one_light(
 ) -> None:
     """Add a single Blender light matching the given ``pv.Light``."""
     light_data = _make_light_data(light, index)
-    color = light.diffuse_color.float_rgb
+    color = colorspace.linear_rgb(light.diffuse_color.float_rgb)
     light_data.color = (color[0], color[1], color[2])
 
     light_obj = bpy.data.objects.new(f"PVLight_{index}", light_data)
@@ -159,3 +177,25 @@ def _add_fallback_sun() -> None:
         "XYZ",
     )
     bpy.context.scene.collection.objects.link(light_obj)
+
+
+def _add_studio_lights(renderer: object) -> bool:
+    """Add the studio rig as shadow-casting area lights.
+
+    Returns
+    -------
+    bool
+        ``False`` when the renderer shows nothing with an extent (the
+        caller then translates the plotter's own lights).
+
+    """
+    rig = studio_rig(cast("pv.Renderer", renderer))
+    for spec in rig:
+        data = bpy.data.lights.new(f"PVStudio_{spec.name}", type="AREA")
+        data.energy = spec.energy
+        data.size = spec.size
+        data.use_shadow = True
+        obj = bpy.data.objects.new(f"PVStudio_{spec.name}", data)
+        bpy.context.scene.collection.objects.link(obj)
+        obj.matrix_world = look_at_matrix(spec.position, spec.focal_point, spec.up)
+    return bool(rig)

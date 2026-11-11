@@ -21,6 +21,7 @@ from pyvista_blender._compat import rna_get, rna_set
 from pyvista_blender._component import BlenderComponent
 from pyvista_blender._version import __version__
 from pyvista_blender.animate import orbit_camera
+from pyvista_blender.studio import studio_lights
 
 __all__ = [
     "BlenderComponent",
@@ -29,4 +30,5 @@ __all__ = [
     "orbit_camera",
     "rna_get",
     "rna_set",
+    "studio_lights",
 ]

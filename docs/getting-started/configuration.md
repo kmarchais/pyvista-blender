@@ -36,6 +36,20 @@ Valid values:
 - `"cpu"` — fallback, slow
 - `"auto"` — try OPTIX > CUDA > HIP > METAL > oneAPI > CPU
 
+A GPU backend renders on its own devices, without the CPU.
+
+## Lighting
+
+```python
+pvb.config.lighting = "studio"    # default: soft shadowed area-light rig
+pvb.config.lighting = "vtk"       # translate the VTK light kit instead
+pl.blender.render("out.png", lighting="vtk")   # or for one render
+```
+
+The studio rig replaces only the default, camera-attached lights; lights
+placed with `pl.add_light(...)` are always translated. See
+[Lights](../cookbook/lights.md).
+
 ## Samples
 
 ```python

@@ -916,9 +916,10 @@ def test_export_animation_blend_bake_scalars_default_no_modifier(
 
 @pytest.mark.bpy
 def test_export_animation_blend_bake_lights_keyframes_intensity(
-    offscreen_plotter: pv.Plotter, tmp_path: Path
+    offscreen_plotter: pv.Plotter, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """``bake_lights=True`` keyframes a moving / dimming light."""
+    monkeypatch.setattr(pvb.config, "lighting", "vtk")
     pl = offscreen_plotter
     pl.add_mesh(pv.Sphere(), color="red")
     pl.camera_position = [(3.0, 0.0, 0.0), (0.0, 0.0, 0.0), (0.0, 0.0, 1.0)]
@@ -2519,3 +2520,27 @@ def test_scene_cache_evicts_removed_actor(
         return
     if "cube" in objects_after_remove:
         pytest.fail("cube bpy object survived eviction")
+
+
+@pytest.mark.bpy
+def test_bake_lights_warns_under_studio_lighting(
+    offscreen_plotter: pv.Plotter, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The studio rig replaces the default light kit: baking it warns."""
+    monkeypatch.setattr(pvb.config, "lighting", "studio")
+    pl = offscreen_plotter
+    pl.add_mesh(pv.Sphere(), color="red")
+    kit = pl.renderer.lights[0]
+
+    def update(frame: int) -> None:
+        kit.intensity = 0.2 + 0.1 * frame
+
+    with pytest.warns(UserWarning, match="bake_lights has no effect"):
+        pl.blender.export_animation_blend(
+            str(tmp_path / "studio.blend"),
+            update,
+            frames=range(2),
+            fps=24,
+            bake_camera=False,
+            bake_lights=True,
+        )

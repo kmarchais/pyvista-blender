@@ -47,6 +47,17 @@ Engine = Literal["cycles", "eevee"]
 #: available.
 Device = Literal["optix", "cuda", "hip", "metal", "oneapi", "cpu", "auto", "gpu"]
 
+#: How the scene is lit.
+#:
+#: ``"studio"`` (the default) replaces the plotter's lights with a key /
+#: fill / rim rig of soft area lights that cast shadows, placed about the
+#: camera and sized to the scene's bounds, with a soft white fill from all
+#: around: the contact shadows that give stacked or packed geometry its depth.
+#: :func:`pyvista_blender.studio_lights` lights the PyVista preview the same
+#: way. ``"vtk"`` translates the plotter's own lights instead (the default
+#: light kit becomes shadowless sun lights, as in VTK's preview).
+Lighting = Literal["vtk", "studio"]
+
 # ---------------------------------------------------------------------------
 # Defaults. Mutate these once at startup, or leave them and pass per-call.
 # ---------------------------------------------------------------------------
@@ -68,6 +79,9 @@ resolution_percentage: int = 100
 
 #: Whether the rendered film is transparent (sets ``scene.render.film_transparent``).
 transparent_bg: bool = False
+
+#: Default lighting. See :data:`Lighting`.
+lighting: Lighting = "studio"
 
 #: Maximum number of subdivisions when tessellating high-order cells.
 #:
@@ -106,6 +120,7 @@ idle_samples: int = 128
 # ---------------------------------------------------------------------------
 
 SUPPORTED_ENGINES: Final[tuple[str, ...]] = ("cycles", "eevee")
+SUPPORTED_LIGHTING: Final[tuple[str, ...]] = ("vtk", "studio")
 SUPPORTED_DEVICES: Final[tuple[str, ...]] = (
     "optix",
     "cuda",

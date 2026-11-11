@@ -38,6 +38,7 @@ import pyvista as pv
 from mathutils import Matrix
 from PIL import Image
 
+from pyvista_blender import config
 from pyvista_blender._bpy_silence import silence_bpy_stderr
 from pyvista_blender._options import (
     _EMPTY_SOURCES,
@@ -53,7 +54,8 @@ from pyvista_blender._options import (
 from pyvista_blender._progress import report_render_progress
 from pyvista_blender.hud import composite_hud_overlays
 from pyvista_blender.render.engine import configure_engine
-from pyvista_blender.translate import background, camera, light
+from pyvista_blender.studio import uses_studio_rig
+from pyvista_blender.translate import background, camera, colorspace, light
 from pyvista_blender.translate.camera import look_at_matrix
 from pyvista_blender.translate.scene import (
     SceneCache,
@@ -718,7 +720,7 @@ def do_export_animation_blend(
         )
 
     if bake.lights and samples.light:
-        _bake_light_animation(samples.light)
+        _bake_translated_lights(samples.light, plotter.renderer)
 
     if bake.transforms and samples.transform:
         _bake_transform_animation(samples.transform, cache)
@@ -997,7 +999,7 @@ def _sample_lights(
     for index, pv_light in enumerate(lights):
         if not getattr(pv_light, "on", True):
             continue
-        color = pv_light.diffuse_color.float_rgb
+        color = colorspace.linear_rgb(pv_light.diffuse_color.float_rgb)
         snapshot: _LightSnapshot = (
             tuple(pv_light.world_position),
             tuple(pv_light.world_focal_point),
@@ -1146,7 +1148,7 @@ def _capture_actor_material(
     and ``metallic`` directly.
     """
     prop = actor.prop
-    color = prop.color.float_rgb
+    color = colorspace.linear_rgb(prop.color.float_rgb)
     interpolation = (
         getattr(getattr(prop, "interpolation", None), "name", "")
         or str(getattr(prop, "interpolation", ""))
@@ -1527,6 +1529,27 @@ def _write_mdd(path: Path, vertices: np.ndarray, *, fps: int) -> None:
         fh.write(header)
         fh.write(times.tobytes())
         fh.write(verts_be.tobytes())
+
+
+def _bake_translated_lights(
+    samples: dict[int, list[tuple[int, _LightSnapshot]]],
+    renderer: pv.Renderer,
+) -> None:
+    """Keyframe the translated plotter lights, or warn under the studio rig.
+
+    The studio rig replaces the plotter's lights, so theirs have no Blender
+    counterpart to keyframe.
+    """
+    if config.lighting == "studio" and uses_studio_rig(renderer):
+        warnings.warn(
+            "bake_lights has no effect with config.lighting='studio' (the rig "
+            "replaces the plotter's lights); set config.lighting='vtk' to "
+            "translate and animate them",
+            UserWarning,
+            stacklevel=4,
+        )
+        return
+    _bake_light_animation(samples)
 
 
 def _bake_light_animation(

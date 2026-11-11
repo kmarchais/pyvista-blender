@@ -54,6 +54,10 @@ class _CyclesPrefs(Protocol):
 
     def refresh_devices(self) -> None: ...
 
+    def get_devices_for_type(
+        self, compute_device_type: str
+    ) -> Iterable[_CyclesDevice]: ...
+
 
 _AUTO_ORDER = ("OPTIX", "CUDA", "HIP", "METAL", "ONEAPI")
 _DEVICE_TO_BPY = {
@@ -162,15 +166,24 @@ def _try_enable_backend(backend: str) -> bool:
         # The bpy build doesn't support this backend (e.g. METAL on Linux).
         return False
 
-    if hasattr(cprefs, "refresh_devices"):
+    # Ask Cycles for this backend's devices only: ``refresh_devices()``
+    # initialises every backend, and those whose runtime is missing print
+    # a warning on each start (``HIPEW initialization failed`` without
+    # AMD's HIP).
+    if hasattr(cprefs, "get_devices_for_type"):
+        listed = list(cprefs.get_devices_for_type(backend))
+    else:
         cprefs.refresh_devices()
+        listed = list(cprefs.devices)
 
-    matching = [d for d in cprefs.devices if getattr(d, "type", "") == backend]
+    matching = [d for d in listed if getattr(d, "type", "") == backend]
     if not matching:
         return False
 
-    for dev in cprefs.devices:
-        dev.use = getattr(dev, "type", "") in {backend, "CPU"}
+    # The GPU backend alone (no CPU + GPU hybrid render), as the device
+    # string asked for.
+    for dev in listed:
+        dev.use = getattr(dev, "type", "") == backend
     return True
 
 
