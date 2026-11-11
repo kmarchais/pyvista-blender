@@ -20,7 +20,7 @@ default plotter kit.
 
 A heap of spheres on a plane under the default studio rig, against the
 translated VTK light kit, with the PyVista preview lit by
-`pl.blender.add_studio_lights()`.
+`pyvista_blender.studio_lights`.
 
 | PyVista                                                                  | Blender, VTK light kit                                                 | Blender, studio                                                          |
 | ------------------------------------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------ |

@@ -14,7 +14,7 @@ pytest.importorskip("bpy")
 
 import bpy
 
-from pyvista_blender import config
+from pyvista_blender import config, studio_lights
 from pyvista_blender.translate import light
 from pyvista_blender.translate.scene import build_scene_from_plotter
 
@@ -159,13 +159,15 @@ def test_studio_lighting_is_the_default() -> None:
 
 
 def test_preview_rig_matches_the_blender_rig() -> None:
-    """``add_studio_lights()`` puts VTK lights where the Blender rig puts its own."""
+    """``studio_lights()`` puts VTK lights where the Blender rig puts its own."""
     blender = [np.array(o.matrix_world)[:3, 3] for o in _rig(1.0)]
     blender_by_name = dict(zip((o.name for o in _rig(1.0)), blender, strict=True))
     pl = pv.Plotter(off_screen=True, window_size=[640, 480])
     pl.add_mesh(pv.Box(bounds=(0, 4, 0, 1, 0, 1)))
     pl.camera_position = [(-2, -5, 3), (2, 0.5, 0.5), (0, 0, 1)]
-    pl.blender.add_studio_lights()
+    pl.remove_all_lights()
+    for lt in studio_lights(pl):
+        pl.add_light(lt)
     scene = [lt for lt in pl.renderer.lights if lt.is_scene_light]
     camera = [lt for lt in pl.renderer.lights if lt.is_camera_light]
     pl.close()
@@ -199,11 +201,13 @@ def test_user_placed_lights_are_kept() -> None:
 
 @pytest.mark.usefixtures("studio")
 def test_preview_rig_is_recognised() -> None:
-    """After ``add_studio_lights()`` the render still uses the studio rig."""
+    """With ``studio_lights()`` in the plotter the render still uses the rig."""
     pl = pv.Plotter(off_screen=True, window_size=[640, 480])
     pl.add_mesh(pv.Box(bounds=(0, 4, 0, 1, 0, 1)))
     pl.camera_position = [(-2, -5, 3), (2, 0.5, 0.5), (0, 0, 1)]
-    pl.blender.add_studio_lights()
+    pl.remove_all_lights()
+    for lt in studio_lights(pl):
+        pl.add_light(lt)
     build_scene_from_plotter(pl)
     pl.close()
     scene = cast("bpy.types.Scene", bpy.context.scene)

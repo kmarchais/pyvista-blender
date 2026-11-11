@@ -53,7 +53,7 @@ Device = Literal["optix", "cuda", "hip", "metal", "oneapi", "cpu", "auto", "gpu"
 #: fill / rim rig of soft area lights that cast shadows, placed about the
 #: camera and sized to the scene's bounds, with a soft white fill from all
 #: around: the contact shadows that give stacked or packed geometry its depth.
-#: ``pl.blender.add_studio_lights()`` lights the PyVista preview the same
+#: :func:`pyvista_blender.studio_lights` lights the PyVista preview the same
 #: way. ``"vtk"`` translates the plotter's own lights instead (the default
 #: light kit becomes shadowless sun lights, as in VTK's preview).
 Lighting = Literal["vtk", "studio"]

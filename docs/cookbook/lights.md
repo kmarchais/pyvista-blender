@@ -25,13 +25,23 @@ kit, `lighting="three lights"`). Lights placed in the scene with
 `pl.add_light(...)` are your own setup: they are translated as described
 below, with no rig.
 
-To light the PyVista preview the same way, call
-`pl.blender.add_studio_lights()` once the scene and camera are set. VTK has
-no all-around fill, so shadow sides render darker in the preview than in
-Cycles; `pl.enable_ssao()` adds contact shadows, and `ambient=0.3` on a mesh
-lifts its shadow side at the cost of contrast.
+To light the PyVista preview the same way, add the rig's lights with
+PyVista once the scene and camera are set; the Blender render recognises
+them and uses its own rig:
 
-| PyVista + `add_studio_lights()`                                                      | Blender, `lighting = "vtk"`                                                     | Blender, `lighting = "studio"`                                                       |
+```python
+pl.remove_all_lights()
+for light in pvb.studio_lights(pl):
+    pl.add_light(light)
+pl.enable_ssao()                      # contact shadows in the preview
+pl.blender.render("studio.png")
+```
+
+VTK has no all-around fill, so shadow sides render darker in the preview
+than in Cycles; `ambient=0.3` on a mesh lifts its shadow side at the cost of
+contrast.
+
+| PyVista + `studio_lights()`                                                          | Blender, `lighting = "vtk"`                                                     | Blender, `lighting = "studio"`                                                       |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | ![Studio lighting in PyVista](../assets/examples/lights/studio_lighting_pyvista.png) | ![VTK light kit in Blender](../assets/examples/lights/vtk_lighting_blender.png) | ![Studio lighting in Blender](../assets/examples/lights/studio_lighting_blender.png) |
 

@@ -4,7 +4,7 @@
 
 A heap of spheres on a plane, where contact shadows matter. Three images:
 
-* the PyVista preview lit by ``pl.blender.add_studio_lights()``, with
+* the PyVista preview lit by ``pyvista_blender.studio_lights``, with
   screen-space ambient occlusion for its contact shadows;
 * the Blender render with ``config.lighting = "vtk"`` (the VTK light kit
   as shadowless sun lights);
@@ -74,7 +74,9 @@ def main() -> None:
     plotter.blender.render(str(out_dir / "vtk_lighting_blender.png"), samples=128)
     pvb.config.lighting = "studio"
     plotter.blender.render(str(out_dir / "studio_lighting_blender.png"), samples=128)
-    plotter.blender.add_studio_lights()
+    plotter.remove_all_lights()
+    for light in pvb.studio_lights(plotter):
+        plotter.add_light(light)
     plotter.enable_ssao(radius=0.3, kernel_size=128)
     plotter.enable_anti_aliasing("ssaa")
     plotter.screenshot(str(out_dir / "studio_lighting_pyvista.png"))
