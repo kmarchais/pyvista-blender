@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the default light kit only: lights placed in the scene with `add_light` are
   translated as before. Set `config.lighting = "vtk"` to translate the default
   kit too.
+- Add `lighting=` to `pl.blender.render` and `pl.blender.animate`, and a
+  `pl.blender.lighting` override, resolved like the other render options.
 - Add `pyvista_blender.studio_lights(pl)`: the same rig as `pv.Light`
   objects to add with `pl.add_light`, so the PyVista preview and the Blender
   render are lit alike.

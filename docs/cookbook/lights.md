@@ -14,11 +14,13 @@ import pyvista_blender as pvb
 
 pl = pv.Plotter(off_screen=True)
 pl.add_mesh(pv.Sphere(), color="#2a78d6")
-pl.blender.render("studio.png")       # studio rig (the default)
-
-pvb.config.lighting = "vtk"           # translate the VTK light kit instead
-pl.blender.render("vtk.png")
+pl.blender.render("studio.png")                  # studio rig (the default)
+pl.blender.render("vtk.png", lighting="vtk")     # the VTK light kit instead
 ```
+
+`lighting=` also works on `pl.blender.animate`, and follows the same order
+as the other render options: the call, then `pl.blender.lighting`, then
+`pvb.config.lighting`.
 
 The rig replaces only the lights attached to the camera (the default light
 kit, `lighting="three lights"`). Lights placed in the scene with

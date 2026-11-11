@@ -20,6 +20,7 @@ from pyvista_blender.translate.scene import build_scene_from_plotter
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
+    from pathlib import Path
 
 _N_RIG = 3
 _N_STUDIO_BACKGROUNDS = 2  # the background for the camera, a white fill for the rest
@@ -227,3 +228,30 @@ def test_unknown_lighting_is_refused() -> None:
             light.translate_lights(pv.Plotter(off_screen=True))
     finally:
         config.lighting = original
+
+
+@pytest.mark.usefixtures("studio")
+def test_render_takes_lighting_per_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``render(lighting=...)`` beats ``pl.blender.lighting``, which beats the module.
+
+    The module default is restored after each render.
+    """
+    seen: list[str] = []
+
+    def fake_render(*_args: object, **_kwargs: object) -> None:
+        seen.append(config.lighting)
+
+    monkeypatch.setattr("pyvista_blender._render_impl.do_render", fake_render)
+    pl = pv.Plotter(off_screen=True)
+    pl.add_mesh(pv.Box())
+    out = str(tmp_path / "out.png")
+    pl.blender.render(out)
+    pl.blender.render(out, lighting="vtk")
+    pl.blender.lighting = "vtk"
+    pl.blender.render(out)
+    pl.blender.render(out, lighting="studio")
+    pl.close()
+    if seen != ["studio", "vtk", "vtk", "studio"] or config.lighting != "studio":
+        pytest.fail(f"lighting per render {seen}, module left at {config.lighting!r}")

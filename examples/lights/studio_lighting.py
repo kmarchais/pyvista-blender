@@ -6,9 +6,9 @@ A heap of spheres on a plane, where contact shadows matter. Three images:
 
 * the PyVista preview lit by ``pyvista_blender.studio_lights``, with
   screen-space ambient occlusion for its contact shadows;
-* the Blender render with ``config.lighting = "vtk"`` (the VTK light kit
-  as shadowless sun lights);
-* the Blender render with the default ``config.lighting = "studio"``.
+* the Blender render with ``lighting="vtk"`` (the VTK light kit as
+  shadowless sun lights);
+* the Blender render with the default studio lighting.
 
 Run with ``uv run python examples/lights/studio_lighting.py``.
 """
@@ -70,9 +70,9 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     plotter = _scene()
-    pvb.config.lighting = "vtk"
-    plotter.blender.render(str(out_dir / "vtk_lighting_blender.png"), samples=128)
-    pvb.config.lighting = "studio"
+    plotter.blender.render(
+        str(out_dir / "vtk_lighting_blender.png"), samples=128, lighting="vtk"
+    )
     plotter.blender.render(str(out_dir / "studio_lighting_blender.png"), samples=128)
     plotter.remove_all_lights()
     for light in pvb.studio_lights(plotter):
