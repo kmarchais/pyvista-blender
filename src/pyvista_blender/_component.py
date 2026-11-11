@@ -39,6 +39,11 @@ from pyvista_blender.interactive.visibility import (
     hide_underlying_actors,
     restore_underlying_actors,
 )
+from pyvista_blender.studio import (
+    VTK_BACKGROUND_FILL,
+    VTK_KEY_INTENSITY,
+    studio_rig,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -199,6 +204,35 @@ class BlenderComponent:
     # ------------------------------------------------------------------ #
     # Public API                                                         #
     # ------------------------------------------------------------------ #
+
+    def add_studio_lights(self) -> None:
+        """Light the PyVista preview with the studio rig.
+
+        Replaces the plotter's lights with the key / fill / rim of
+        ``config.lighting = "studio"``, at the same places (about the
+        current camera, sized to the visible bounds), plus a soft camera
+        light for the background's fill, so the VTK preview and the Blender
+        render are lit alike. Call it once the scene and camera are set:
+        the rig does not follow later camera moves.
+        """
+        plotter = self._plotter
+        plotter.remove_all_lights()
+        rig = studio_rig(plotter.renderer)
+        if not rig:
+            return
+        key = rig[0].irradiance
+        for spec in rig:
+            plotter.add_light(
+                pv.Light(
+                    position=spec.position,
+                    focal_point=spec.focal_point,
+                    light_type="scene light",
+                    intensity=VTK_KEY_INTENSITY * spec.irradiance / key,
+                )
+            )
+        plotter.add_light(
+            pv.Light(light_type="camera light", intensity=VTK_BACKGROUND_FILL)
+        )
 
     def add_glyph(
         self,

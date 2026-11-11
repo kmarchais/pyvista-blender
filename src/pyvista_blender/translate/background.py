@@ -21,11 +21,14 @@ Three branches keyed off PyVista's renderer state:
 from __future__ import annotations
 
 import math
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import bpy
 import numpy as np
 from vtkmodules.util.numpy_support import vtk_to_numpy
+
+from pyvista_blender import config
+from pyvista_blender.studio import BACKGROUND_FILL, uses_studio_rig
 
 if TYPE_CHECKING:
     import pyvista as pv
@@ -70,12 +73,23 @@ def translate_background(source: pv.BasePlotter | object) -> None:
     if env_tex is not None:
         bg_socket = _build_environment(tree, env_tex)
         _allow_world_in_shading_rays(world)
-    elif _renderer_has_gradient(renderer):
-        bg_socket = _build_gradient(tree, renderer)
-        _hide_world_from_shading_rays(world)
     else:
-        bg_socket = _build_solid(tree, renderer)
-        _hide_world_from_shading_rays(world)
+        if _renderer_has_gradient(renderer):
+            bg_socket = _build_gradient(tree, renderer)
+        else:
+            bg_socket = _build_solid(tree, renderer)
+        # Studio lighting: a soft white fill from all around (a studio's
+        # bounce light) under the area-light rig, at BACKGROUND_FILL; the
+        # camera still sees the background as set. VTK's look has no fill.
+        if (
+            config.lighting == "studio"
+            and bg_socket is not None
+            and uses_studio_rig(cast("pv.Renderer", renderer))
+        ):
+            bg_socket = _dim_for_shading_rays(tree, bg_socket, BACKGROUND_FILL)
+            _allow_world_in_shading_rays(world)
+        else:
+            _hide_world_from_shading_rays(world)
 
     if bg_socket is not None:
         tree.links.new(bg_socket, output.inputs["Surface"])
@@ -273,6 +287,36 @@ def _read_vtk_texture_rgba(env_tex: object) -> np.ndarray | None:
         # Greyscale source: replicate across RGB.
         rgba[..., 0] = rgba[..., 1] = rgba[..., 2] = arr[..., 0] / 255.0
     return rgba
+
+
+def _dim_for_shading_rays(
+    tree: bpy.types.NodeTree, bg_socket: bpy.types.NodeSocket, strength: float
+) -> bpy.types.NodeSocket:
+    """Return a world shader: ``bg_socket`` for camera rays, a white fill for others.
+
+    The fill is neutral white at ``strength`` whatever the background's
+    colour, so a dark background still gets its shadows filled; a Light
+    Path ``Is Camera Ray`` mix keeps the background as set for the camera.
+
+    Returns
+    -------
+    bpy.types.NodeSocket
+        The mix shader's output, to link into the world output.
+
+    """
+    source = bg_socket.node
+    fill = tree.nodes.new("ShaderNodeBackground")
+    fill.location = (source.location.x, source.location.y - 200)
+    fill.inputs["Color"].default_value = (1.0, 1.0, 1.0, 1.0)  # ty: ignore[unresolved-attribute]
+    fill.inputs["Strength"].default_value = strength  # ty: ignore[unresolved-attribute]
+    light_path = tree.nodes.new("ShaderNodeLightPath")
+    light_path.location = (source.location.x, source.location.y + 250)
+    mix = tree.nodes.new("ShaderNodeMixShader")
+    mix.location = (source.location.x + 180, source.location.y)
+    tree.links.new(light_path.outputs["Is Camera Ray"], mix.inputs["Fac"])
+    tree.links.new(fill.outputs["Background"], mix.inputs[1])
+    tree.links.new(bg_socket, mix.inputs[2])
+    return mix.outputs["Shader"]
 
 
 def _hide_world_from_shading_rays(world: bpy.types.World) -> None:

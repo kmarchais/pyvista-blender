@@ -26,6 +26,8 @@ from typing import TYPE_CHECKING
 
 import bpy
 
+from pyvista_blender.translate import colorspace
+
 if TYPE_CHECKING:
     import pyvista as pv
 
@@ -156,7 +158,7 @@ def _build_emission(
         attr.location = (x - 250, 0)
         node_tree.links.new(attr.outputs["Color"], emission.inputs["Color"])
     else:
-        r, g, b = prop.color.float_rgb
+        r, g, b = colorspace.linear_rgb(prop.color.float_rgb)
         emission.inputs["Color"].default_value = (r, g, b, 1.0)
     return emission.outputs["Emission"]
 
@@ -199,7 +201,7 @@ def _wire_base_color(
         attr_node.location = (bsdf.location.x - 250, bsdf.location.y)
         node_tree.links.new(attr_node.outputs["Color"], bsdf.inputs["Base Color"])
     else:
-        r, g, b = prop.color.float_rgb
+        r, g, b = colorspace.linear_rgb(prop.color.float_rgb)
         bsdf.inputs["Base Color"].default_value = (r, g, b, 1.0)
 
 

@@ -24,6 +24,8 @@ from typing import TYPE_CHECKING
 import bmesh
 import bpy
 
+from pyvista_blender.translate import colorspace
+
 if TYPE_CHECKING:
     import pyvista as pv
 
@@ -145,7 +147,9 @@ def make_wire_material(name: str, prop: pv.Property) -> bpy.types.Material:
 
     emission = tree.nodes.new("ShaderNodeEmission")
     color = getattr(prop, "edge_color", None)
-    rgb = color.float_rgb if color is not None else (0.0, 0.0, 0.0)
+    rgb = (
+        colorspace.linear_rgb(color.float_rgb) if color is not None else (0.0, 0.0, 0.0)
+    )
     emission.inputs["Color"].default_value = (rgb[0], rgb[1], rgb[2], 1.0)
     emission.inputs["Strength"].default_value = 1.0
 

@@ -10,8 +10,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Add `pl.blender.render(..., on_progress=callback)` for render status updates.
+- Add studio lighting, the new default (`pyvista_blender.config.lighting =
+"studio"`): a key / fill / rim rig of soft, shadow-casting area lights placed
+  about the camera and sized to the scene, with a soft white fill from all
+  around. It gives stacked or packed geometry its contact shadows. It replaces
+  the default light kit only: lights placed in the scene with `add_light` are
+  translated as before. Set `config.lighting = "vtk"` to translate the default
+  kit too.
+- Add `pl.blender.add_studio_lights()`: the same rig as VTK lights for the
+  PyVista preview, so the preview and the Blender render are lit alike.
+
+### Changed
+
+- Cycles renders on the selected GPU backend alone, without the CPU, and asks
+  Cycles for that backend's devices only (no more `HIPEW initialization
+failed` on machines without AMD's HIP runtime).
+- `export_animation_blend(..., bake_lights=True)` warns and skips the lights
+  under studio lighting, which replaces the plotter's lights.
+- Gallery baselines refreshed for studio lighting and linear flat colours
+  (the scalar-bar baseline also lacked the bar's title, which `main` already
+  renders).
 
 ### Fixed
+
+- Direct RGB(A) scalars (`add_mesh(..., rgb=True)`, or `uint8` colour arrays)
+  keep their colours instead of failing in the colour attribute.
+- Flat colours (`color=`, edge colours, point clouds, light colours) are
+  converted from sRGB to scene-linear, as scalar and background colours
+  already were; they rendered too light before.
 
 - Line-only meshes, including outlines and polylines, now render with the actor's
   color and `line_width`, including cached position and width updates.

@@ -1,5 +1,46 @@
 # Lights
 
+## Studio lighting (default)
+
+By default the Blender render replaces PyVista's default light kit with a
+studio rig: a key, a fill and a rim light, all soft area lights that cast
+shadows, placed about the camera and sized to the scene's bounds, plus a
+soft white fill from all around. Stacked or packed geometry gets its
+contact shadows, which the shadowless VTK lights cannot give.
+
+```python
+import pyvista as pv
+import pyvista_blender as pvb
+
+pl = pv.Plotter(off_screen=True)
+pl.add_mesh(pv.Sphere(), color="#2a78d6")
+pl.blender.render("studio.png")       # studio rig (the default)
+
+pvb.config.lighting = "vtk"           # translate the VTK light kit instead
+pl.blender.render("vtk.png")
+```
+
+The rig replaces only the lights attached to the camera (the default light
+kit, `lighting="three lights"`). Lights placed in the scene with
+`pl.add_light(...)` are your own setup: they are translated as described
+below, with no rig.
+
+To light the PyVista preview the same way, call
+`pl.blender.add_studio_lights()` once the scene and camera are set. VTK has
+no all-around fill, so shadow sides render darker in the preview than in
+Cycles; `pl.enable_ssao()` adds contact shadows, and `ambient=0.3` on a mesh
+lifts its shadow side at the cost of contrast.
+
+| PyVista + `add_studio_lights()`                                                      | Blender, `lighting = "vtk"`                                                     | Blender, `lighting = "studio"`                                                       |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| ![Studio lighting in PyVista](../assets/examples/lights/studio_lighting_pyvista.png) | ![VTK light kit in Blender](../assets/examples/lights/vtk_lighting_blender.png) | ![Studio lighting in Blender](../assets/examples/lights/studio_lighting_blender.png) |
+
+This is `examples/lights/studio_lighting.py`. With studio lighting,
+`export_animation_blend(..., bake_lights=True)` has no plotter lights to
+animate and warns.
+
+## The VTK light kit and custom lights
+
 PyVista's lighting model has two layers:
 
 1. A **default light kit** (`vtkLightKit`, 5 lights) added to every

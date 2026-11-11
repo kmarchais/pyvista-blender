@@ -311,11 +311,18 @@ def _resolve_scalar_colors(
     if array_name is None or domain is None:
         return None, None
 
-    if domain == "POINT":
-        raw = np.asarray(surface.point_data[array_name], dtype=np.float32)
-    else:
-        cell_values = np.asarray(surface.cell_data[array_name], dtype=np.float32)
-        raw = np.repeat(cell_values, 3)
+    values = np.asarray(
+        surface.point_data[array_name]
+        if domain == "POINT"
+        else surface.cell_data[array_name]
+    )
+    direct = _direct_colors(values, mapper)
+    if direct is not None:
+        # Cell colours: one per triangle, repeated on its three corners.
+        return direct if domain == "POINT" else np.repeat(direct, 3, axis=0), domain
+    raw = values.astype(np.float32)
+    if domain != "POINT":
+        raw = np.repeat(raw, 3)
 
     lo, hi = getattr(mapper, "scalar_range", (0.0, 1.0))
     if hi <= lo:
@@ -329,6 +336,43 @@ def _resolve_scalar_colors(
     cmap = mpl.colormaps.get_cmap(cmap_name)
     rgba_srgb = np.asarray(cmap(normalized), dtype=np.float32)
     return _srgb_to_linear(rgba_srgb), domain
+
+
+#: ``vtkMapper`` colour modes (``vtkScalarsToColors.h``).
+_COLOR_MODE_DEFAULT = 0
+_COLOR_MODE_DIRECT_SCALARS = 2
+_DIRECT_COMPONENTS = (3, 4)
+_TABLE_NDIM = 2  # (n, components): an array with one colour per row
+
+
+def _direct_colors(values: np.ndarray, mapper: object) -> np.ndarray | None:
+    """Return the linear RGBA colours of an RGB(A) array VTK draws as-is.
+
+    VTK uses an array directly as colours (no lookup table) in the
+    *direct* colour mode (``add_mesh(..., rgb=True)``), and in the default
+    mode when the array is ``uint8``. Integer colours are in 0..255,
+    floating-point ones in 0..1.
+
+    Returns
+    -------
+    np.ndarray or None
+        ``(n, 4)`` scene-linear RGBA, or ``None`` when the array goes
+        through the lookup table instead.
+
+    """
+    if values.ndim != _TABLE_NDIM or values.shape[1] not in _DIRECT_COMPONENTS:
+        return None
+    get_mode = getattr(mapper, "GetColorMode", None)
+    mode = get_mode() if get_mode is not None else _COLOR_MODE_DEFAULT
+    is_bytes = values.dtype == np.uint8
+    if not (
+        mode == _COLOR_MODE_DIRECT_SCALARS or (mode == _COLOR_MODE_DEFAULT and is_bytes)
+    ):
+        return None
+    rgba = np.ones((len(values), 4), dtype=np.float32)
+    scale = 255.0 if np.issubdtype(values.dtype, np.integer) else 1.0
+    rgba[:, : values.shape[1]] = np.clip(values / scale, 0.0, 1.0)
+    return _srgb_to_linear(rgba)
 
 
 def _resolve_active_scalar(
